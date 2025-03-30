@@ -2,7 +2,7 @@
 
 ## Description
 
-This script is a modified version of the `enfuseAdvanced` script found in the darktable repository. The primary modification an issue when handling input file names for focus stacking.
+This script is a modified version of the `enfuseAdvanced` script found in the darktable repository. The  modification fix an issue when handling input file names for focus stacking.
 
 **Problem:** The `image_table` provided by Darktable does not sort the images by name, which means that the "align_image_stack" command will not retrieve files in alphabetical order.
 
