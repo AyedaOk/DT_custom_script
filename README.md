@@ -1,4 +1,4 @@
-# Lua Scripts - Enfuse Advanced Modification
+Enfuse Advanced 
 
 ## Description
 
@@ -22,3 +22,10 @@ This modification introduces the following changes to the original script:
     table.sort(image_list)
     images_to_align = table.concat(image_list, " ")
 ```
+AI Toolbox
+
+## Description
+
+This script is requires installing ollama as a docker container. You can wantch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
+
+Also, you can watch this video if you want to know how to install it --> https://youtu.be/dGwhvTCIbT8
