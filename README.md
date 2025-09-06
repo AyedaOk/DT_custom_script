@@ -1,4 +1,4 @@
-Enfuse Advanced 
+#Enfuse Advanced 
 
 ## Description
 
@@ -22,7 +22,7 @@ This modification introduces the following changes to the original script:
     table.sort(image_list)
     images_to_align = table.concat(image_list, " ")
 ```
-AI Toolbox
+#AI Toolbox
 
 ## Description
 
