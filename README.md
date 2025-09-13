@@ -26,6 +26,8 @@ This modification introduces the following changes to the original script:
 
 ## Description
 
-This script is requires installing ollama as a docker container. You can wantch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
+You can wantch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
 
-Also, you can watch this video if you want to know how to install it --> https://youtu.be/dGwhvTCIbT8
+This script requires installing ollama. It can be installed from a DOcker container. You can watch this video if you want to know how to install it with docker --> https://youtu.be/dGwhvTCIbT8
+
+This video if you want to know how to install it natively -->https://youtu.be/If6PUnd4zO0
