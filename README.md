@@ -26,8 +26,15 @@ This modification introduces the following changes to the original script:
 
 ## Description
 
-You can wantch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
+You can watch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
 
 This script requires installing ollama. It can be installed from a DOcker container. You can watch this video if you want to know how to install it with docker --> https://youtu.be/dGwhvTCIbT8
 
 This video if you want to know how to install it natively -->https://youtu.be/If6PUnd4zO0
+
+# Enfuse Simple
+
+## Description
+
+This plugin is using enfue and align_image_stack to do focus stacking and HDR. The `enfuseAdvanced` plugin gives more flexibility but does not work on Windows and macOS. `Enfuse Simple` is more simple, but works on Linux, macOS and Windows. You can watch this video for explanations about how to install it --> https://youtu.be/dcHRvXXtQOY 
+
