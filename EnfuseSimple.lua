@@ -1,6 +1,4 @@
 -- EnfuseSimple.lua
--- Simple Enfuse HDR/Focus stacking integration for Darktable
--- Now with executable path selection similar to HDRMerge
 
 local dt = require "darktable"
 local du = require "lib/dtutils"
@@ -16,7 +14,7 @@ local script_data = {}
 script_data.metadata = {
   name    = "EnfuseSimple",
   purpose = _("HDR/Focus Stacking with Enfuse"),
-  author  = "Ayéda Okambawa (GUI enhancements inspired by HDRMerge integration)",
+  author  = "Ayéda Okambawa",
 }
 
 -----------------------------------------------------------------------
