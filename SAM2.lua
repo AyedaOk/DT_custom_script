@@ -97,6 +97,7 @@ local function btt_edit()
     dt.print(_("No image available"))
     return
   end
+  dt.print(_("Starting SAM2 mask generation..."))
 
   -- Retrieve saved SAM2 executable
   local sam2_bin = dt.preferences.read(mod, "sam2_bin", "string") or "sam2-tools"
@@ -107,6 +108,7 @@ local function btt_edit()
   end
 
   for _, img in ipairs(images) do
+    local is_windows = package.config:sub(1,1) == "\\"
     local png_path = export_to_temp_png(img, sld_size.value)
     local tmp_dir = dt.configuration.tmp_dir
     local out_dir = img.path
@@ -126,26 +128,45 @@ local function btt_edit()
     elseif mode == "Points" then mode_flag = " --points"
     end
 
-    local command = string.format(
-      '"%s" -i "%s" -o "%s" -m %s -n %s --pfm%s',
-      sam2_bin, png_path, tmp_dir, model_id, nb_mask, mode_flag
-    )
+    local command
+    if is_windows then
+      command = string.format(
+        'cmd /C ""%s" -i "%s" -o "%s" -m %s -n %s --pfm%s""',
+        sam2_bin, png_path, tmp_dir, model_id, nb_mask, mode_flag
+      )
+    else
+      command = string.format(
+        '"%s" -i "%s" -o "%s" -m %s -n %s --pfm%s',
+        sam2_bin, png_path, tmp_dir, model_id, nb_mask, mode_flag
+      )
+    end
 
     dt.print_log("Running: " .. command)
     local h = io.popen(command)
     local out = h:read("*a")
     h:close()
 
-    -- Move masks to same directory as image
-    for file in io.popen('ls "' .. tmp_dir .. '"'):lines() do
-      if file:match("_mask") then
-        local src = tmp_dir .. "/" .. file
-        local dst = out_dir .. "/" .. file
-        os.execute(string.format('mv "%s" "%s"', src, dst))
-        dt.print_log("Mask saved: " .. dst)
-      end
-    end
-
+	if is_windows then
+	  local list_cmd = string.format('cmd /C dir /b "%s"', tmp_dir)
+	  for file in io.popen(list_cmd):lines() do
+		if file:match("_mask") then
+		  local src = tmp_dir .. "\\" .. file
+		  local dst = out_dir .. "\\" .. file
+		  local move_cmd = string.format('cmd /C move /Y "%s" "%s"', src, dst)
+		  os.execute(move_cmd)
+		  dt.print_log("Mask saved: " .. dst)
+		end
+	  end
+	else
+	  for file in io.popen('ls "' .. tmp_dir .. '"'):lines() do
+		if file:match("_mask") then
+		  local src = tmp_dir .. "/" .. file
+		  local dst = out_dir .. "/" .. file
+		  os.execute(string.format('mv "%s" "%s"', src, dst))
+		  dt.print_log("Mask saved: " .. dst)
+		end
+	  end
+	end
     os.remove(png_path)
   end
 end
