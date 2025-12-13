@@ -1,40 +1,67 @@
-# Enfuse Advanced 
+# Darktable Lua Scripts Collection
 
+A collection of enhanced Darktable Lua plugins, including improved focus stacking tools, AI utilities, and SAM2 segmentation support.
+
+## Table of Contents
+- Enfuse Advanced  
+- AI Toolbox  
+- Enfuse Simple  
+- SAM2 Segmentation Plugin  
+
+---
+
+# SAM2 AI Masking Plugin
 ## Description
+A Darktable plugin that uses **Meta AI’s SAM2 image segmentation model** to generate masks directly from Darktable.
 
-This script is a modified version of the `enfuseAdvanced` script found in the darktable repository. The  modification fix an issue when handling input file names for focus stacking.
+- Linux install video → https://youtu.be/C98gejXkQqI  
 
-**Problem:** The `image_table` provided by Darktable does not sort the images by name, which means that the "align_image_stack" command will not retrieve files in alphabetical order.
-
-**Solution:** This modification alters the `UpdateAISargs` to make is sort images by name.
-
-## Change Log
-
-This modification introduces the following changes to the original script:
-
-* **Line 308:**  A local table `image_list` is initialized to store the extracted file names.
-* **Lines 324-328:**
-```lua
-     for image in images_to_align:gmatch("%S+") do  -- %S+ captures non-whitespace sequences
-        table.insert(image_list, image)
-    end
-
-    table.sort(image_list)
-    images_to_align = table.concat(image_list, " ")
-```
-# AI Toolbox
-
-## Description
-
-You can watch this video for a demonstration of what the script does --> https://youtu.be/bGFSdvZCsN0
-
-This script requires installing ollama. It can be installed from a DOcker container. You can watch this video if you want to know how to install it with docker --> https://youtu.be/dGwhvTCIbT8
-
-This video if you want to know how to install it natively -->https://youtu.be/If6PUnd4zO0
+---
 
 # Enfuse Simple
-
 ## Description
+A simplified focus stacking and HDR plugin using `enfuse` and `align_image_stack`.
 
-This plugin is using enfue and align_image_stack to do focus stacking and HDR. The `enfuseAdvanced` plugin gives more flexibility but does not work on Windows and macOS. `Enfuse Simple` is more simple, but works on Linux, macOS and Windows. You can watch this video for explanations about how to install it --> https://youtu.be/dcHRvXXtQOY 
+Differences from Enfuse Advanced:
+• Simplier  
+• Fully cross‑platform (Linux, macOS, Windows)
+
+Install video → https://youtu.be/dcHRvXXtQOY
+
+---
+
+# Enfuse Advanced
+## Description
+An improved version of Darktable’s original `enfuseAdvanced` script.
+
+**Problem:** Darktable's `image_table` does not sort input file names, causing `align_image_stack` to receive them in the wrong order.
+
+**Solution:**  
+The script now sorts the extracted file names before running the stacking command.
+
+### Key Change
+```lua
+for image in images_to_align:gmatch("%S+") do
+    table.insert(image_list, image)
+end
+table.sort(image_list)
+images_to_align = table.concat(image_list, " ")
+```
+
+---
+
+# AI Toolbox
+## Description
+A collection of AI-powered helpers for Darktable.
+
+- Requires **Ollama**.  
+- Can be installed via Docker or natively.
+
+- Docker install video → https://youtu.be/dGwhvTCIbT8  
+- Native install video → https://youtu.be/If6PUnd4zO0  
+- Toolbox demo → https://youtu.be/bGFSdvZCsN0
+
+---
+
+
 
