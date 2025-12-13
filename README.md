@@ -3,10 +3,10 @@
 A collection of enhanced Darktable Lua plugins, including improved focus stacking tools, AI utilities, and SAM2 segmentation support.
 
 ## Table of Contents
+- SAM2 Segmentation Plugin  
+- Enfuse Simple  
 - Enfuse Advanced  
 - AI Toolbox  
-- Enfuse Simple  
-- SAM2 Segmentation Plugin  
 
 ---
 
