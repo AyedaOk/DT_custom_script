@@ -18,10 +18,9 @@ script_data.metadata = {
 -----------------------------------------------------------------------
 -- Module state
 -----------------------------------------------------------------------
-local mE = {}
-mE.widgets = {}
-mE.event_registered = false
-mE.module_installed = false
+_G.__SAM3_STATE = _G.__SAM3_STATE or { module_installed = false, event_registered = false }
+local mE = _G.__SAM3_STATE
+
 
 -- Preferences module name
 local mod = "module_SAM3_tools"
@@ -148,8 +147,7 @@ local function btt_edit()
       end
 
       if is_windows then
-        -- basic quoting for cmd (avoid quotes inside prompt if possible)
-        prompt = tostring(prompt):gsub('"', "'")
+         prompt = tostring(prompt):gsub('"', "'")
         mode_flag = string.format(' --text "%s"', prompt)
       else
         mode_flag = " --text " .. shell_quote_posix(prompt)
@@ -256,30 +254,29 @@ end
 -- INSTALL MODULE
 -----------------------------------------------------------------------
 local function install_module()
-  if not mE.module_installed then
-    dt.register_lib(
+  if mE.module_installed then return end
+  dt.register_lib(
       "SAM3",
       _("SAM3"),
       true,
       false,
       {[dt.gui.views.darkroom] = {"DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100}},
-      dt.new_widget("box") {
-        orientation = "vertical",
-        GUI.stack
-      },
+      dt.new_widget("box") { orientation = "vertical", GUI.stack },
       nil, nil
     )
-    mE.module_installed = true
-  end
+  mE.module_installed = true
 end
 
 local function destroy()
-  dt.gui.libs["SAM3"].visible = false
+  local lib = dt.gui.libs["SAM3"]
+  if lib then lib.visible = false end
 end
 
 local function restart()
-  dt.gui.libs["SAM3"].visible = true
+  local lib = dt.gui.libs["SAM3"]
+  if lib then lib.visible = true end
 end
+
 
 -----------------------------------------------------------------------
 -- VIEW HANDLING
