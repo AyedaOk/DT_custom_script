@@ -109,6 +109,10 @@ end
 -----------------------------------------------------------------------
 local function btt_edit()
   local images = dt.gui.selection()
+  local dup = dt.database.duplicate(images)
+  if not dup then error("duplicate() returned nil") end
+  dup:reset()
+
   if not images or #images == 0 then
     dt.print(_("No image available"))
     return
@@ -219,6 +223,13 @@ local cbb_menu = dt.new_widget("combobox"){
   end
 }
 
+cbb_menu.changed_callback = function(w)
+  if not GUI.stack then return end
+  local idx = w.selected or 1
+  if idx < 1 then idx = 1 end
+  GUI.stack.active = idx
+end
+
 -----------------------------------------------------------------------
 -- BUILD GUI STACK
 -----------------------------------------------------------------------
@@ -242,7 +253,7 @@ GUI.stack = dt.new_widget("stack"){
   GUI.settings_page
 }
 
--- If no executable configured → go to Settings first
+-- If no executable configured, go to Settings first
 local saved = dt.preferences.read(mod, "sam3_bin", "string") or ""
 if saved == "" then
   GUI.stack.active = 2
@@ -267,16 +278,21 @@ local function install_module()
   mE.module_installed = true
 end
 
+local function safe_get_lib(name)
+  local ok, lib = pcall(function() return dt.gui.libs[name] end)
+  if ok then return lib end
+  return nil
+end
+
 local function destroy()
-  local lib = dt.gui.libs["SAM3"]
+  local lib = safe_get_lib("SAM3")
   if lib then lib.visible = false end
 end
 
 local function restart()
-  local lib = dt.gui.libs["SAM3"]
+  local lib = safe_get_lib("SAM3")
   if lib then lib.visible = true end
 end
-
 
 -----------------------------------------------------------------------
 -- VIEW HANDLING
