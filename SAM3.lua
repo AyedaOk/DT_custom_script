@@ -109,9 +109,6 @@ end
 -----------------------------------------------------------------------
 local function btt_edit()
   local images = dt.gui.selection()
-  local dup = dt.database.duplicate(images)
-  if not dup then error("duplicate() returned nil") end
-  dup:reset()
 
   if not images or #images == 0 then
     dt.print(_("No image available"))
@@ -126,6 +123,36 @@ local function btt_edit()
     GUI.stack.active = 2
     return
   end
+
+  local crop_on = 0
+  if tonumber(dt.gui.action("iop/crop", 0, "enable", "", 0)) == 1 then
+    dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
+    local crop_on = 1
+    dt.print_log("Crop desactivated")
+  end
+
+  local flip_on = 0
+  if tonumber(dt.gui.action("iop/flip", 0, "enable", "", 0)) == 1 then
+    dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
+    flip_on = 1
+    dt.print_log("orientation desactivated")
+  end
+
+  local canvas_on = 0
+  if tonumber(dt.gui.action("iop/enlargecanvas", 0, "enable", "", 0)) == 1 then
+    dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
+    canvas_on = 1
+    dt.print_log("Canvas desactivated")
+  end
+
+  local borders_on = 0
+  if tonumber(dt.gui.action("iop/borders", 0, "enable", "", 0)) == 1 then
+    dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
+    borders_on = 1
+    dt.print_log("Borders desactivated")
+  end
+
+  dt.gui.views.darkroom.display_image()
 
   for _, img in ipairs(images) do
     local is_windows = package.config:sub(1,1) == "\\"
@@ -188,6 +215,7 @@ local function btt_edit()
           local move_cmd = string.format('cmd /C move /Y "%s" "%s"', src, dst)
           os.execute(move_cmd)
           dt.print_log("Mask saved: " .. dst)
+          dt.print("Mask saved")
         end
       end
     else
@@ -197,12 +225,35 @@ local function btt_edit()
           local dst = out_dir .. "/" .. file
           os.execute(string.format('mv "%s" "%s"', src, dst))
           dt.print_log("Mask saved: " .. dst)
+          dt.print("Mask saved")
         end
       end
     end
 
     os.remove(png_path)
   end
+
+  -- Re-enable modules that were desactivated
+  if crop_on then
+    dt.gui.action("iop/crop", 0, "enable", "on", 1.0)
+    dt.print_log("Crop re-enable")
+  end
+
+  if flip_on then
+    dt.gui.action("iop/flip", 0, "enable", "on", 1.0)
+    dt.print_log("Flip re-enable")
+  end
+
+  if canvas_on then
+    dt.gui.action("iop/enlargecanvas", 0, "enable", "on", 1.0)
+    dt.print_log("Canvas re-enable")
+  end
+
+  if borders_on then
+    dt.gui.action("iop/borders", 0, "enable", "on", 1.0)
+    dt.print_log("Borders re-enable")
+  end
+
 end
 
 local editor_button = dt.new_widget("button") {
@@ -253,7 +304,7 @@ GUI.stack = dt.new_widget("stack"){
   GUI.settings_page
 }
 
--- If no executable configured, go to Settings first
+-- If no executable configured go to Settings first
 local saved = dt.preferences.read(mod, "sam3_bin", "string") or ""
 if saved == "" then
   GUI.stack.active = 2
