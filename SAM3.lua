@@ -161,6 +161,36 @@ local function btt_edit()
     return
   end
 
+  local crop_on = false
+  if tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
+    dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
+    crop_on = 1
+    dt.print_log("Crop desactivated")
+  end
+
+  local flip_on = false
+  if tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
+    dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
+    flip_on = 1
+    dt.print_log("orientation desactivated")
+  end
+
+  local canvas_on = false
+  if tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
+    dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
+    canvas_on = 1
+    dt.print_log("Canvas desactivated")
+  end
+
+  local borders_on = false
+  if tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
+    dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
+    borders_on = 1
+    dt.print_log("Borders desactivated")
+  end
+
+  dt.gui.views.darkroom.display_image()
+
   local root_dir = dt.preferences.read(mod, "sam3_out", "directory")
 
   for _, img in ipairs(images) do
@@ -171,37 +201,6 @@ local function btt_edit()
 
     local mode = cbb_mode.value
     local nb_mask = math.tointeger(sld_nb_mask.value)
-
-    local crop_on = false
-    if tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
-      dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
-      crop_on = 1
-      dt.print_log("Crop desactivated")
-    end
-
-    local flip_on = false
-    if tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
-      dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
-      flip_on = 1
-      dt.print_log("orientation desactivated")
-    end
-
-    local canvas_on = false
-    if tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
-      dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
-      canvas_on = 1
-      dt.print_log("Canvas desactivated")
-    end
-
-    local borders_on = false
-    if tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
-      dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
-      borders_on = 1
-      dt.print_log("Borders desactivated")
-    end
-
-
-    dt.gui.views.darkroom.display_image()
 
     -- Build mode flag
     local mode_flag = ""
