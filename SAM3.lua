@@ -164,35 +164,35 @@ local function btt_edit()
   local crop_on = false
   if tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
     dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
-    crop_on = 1
+    crop_on = true
     dt.print_log("Crop desactivated")
   end
 
   local flip_on = false
   if tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
     dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
-    flip_on = 1
-    dt.print_log("orientation desactivated")
+    flip_on = true
+    dt.print_log("Flip desactivated")
   end
 
   local canvas_on = false
   if tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
     dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
-    canvas_on = 1
+    canvas_on = true
     dt.print_log("Canvas desactivated")
   end
 
   local borders_on = false
   if tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
     dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
-    borders_on = 1
+    borders_on = true
     dt.print_log("Borders desactivated")
   end
 
   local lens_on = false
   if tonumber(dt.gui.action("iop/lens", "enable")) == 1 then
     dt.gui.action("iop/lens", 0, "enable", "off", 1.0)
-    borders_on = 1
+    lens_on = true
     dt.print_log("Lens desactivated")
   end
 
