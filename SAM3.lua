@@ -78,11 +78,11 @@ local sam3_save_button = dt.new_widget("button"){
 }
 
 local reset_button = dt.new_widget("button"){
-  label = _("Reset"),
+  label = _("Reset Mask folder"),
   clicked_callback = function()
     dt.preferences.write(mod, "sam3_out", "string", "")
     GUI.stack.active = 1
-    dt.print(_("Output folder cleared — masks will be saved next to the image."))
+    dt.print(_("Output folder cleared. Masks will be saved next to the image."))
   end
 }
 
@@ -187,6 +187,13 @@ local function btt_edit()
     dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
     borders_on = 1
     dt.print_log("Borders desactivated")
+  end
+
+  local lens_on = false
+  if tonumber(dt.gui.action("iop/lens", "enable")) == 1 then
+    dt.gui.action("iop/lens", 0, "enable", "off", 1.0)
+    borders_on = 1
+    dt.print_log("Lens desactivated")
   end
 
   dt.gui.views.darkroom.display_image()
@@ -307,6 +314,11 @@ local function btt_edit()
     dt.print_log("Borders re-enable")
   end
 
+  if lens_on then
+    dt.gui.action("iop/lens", 0, "enable", "on", 1.0)
+    dt.print_log("Lens re-enable")
+  end
+
     os.remove(png_path)
   end
 
@@ -353,8 +365,8 @@ GUI.settings_page = dt.new_widget("box"){
   orientation = "vertical",
   sam3_path_picker,
   output_path,
-  sam3_save_button,
-  reset_button
+  reset_button,
+  sam3_save_button
 }
 
 GUI.stack = dt.new_widget("stack"){
