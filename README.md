@@ -33,7 +33,7 @@ A simplified focus stacking and HDR plugin using `enfuse` and `align_image_stack
 
 - Simplier than Enfuse Advanced  
 - Fully cross‑platform (Linux, macOS, Windows)
-- Instalationl video → https://youtu.be/dcHRvXXtQOY
+- Instalation video → https://youtu.be/dcHRvXXtQOY
 
 ---
 
