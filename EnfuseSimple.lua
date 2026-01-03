@@ -27,7 +27,7 @@ mE.module_installed = false
 
 -- module name for preferences
 local mod = "module_EnfuseSimple"
-GUI = {}
+local GUI = {}
 -----------------------------------------------------------------------
 -- UI Widgets (main page)
 -----------------------------------------------------------------------
@@ -39,12 +39,14 @@ local cbb_menu = dt.new_widget("combobox"){
   "EnfuseSimple",              -- item 1
   "Settings",                  -- item 2
   changed_callback = function(self)
+    if not (GUI and GUI.stack) then return end  -- guard: stack not created yet
     if self.selected == 1 then
-      GUI.stack.active = 1     -- show main module
+      GUI.stack.active = 1
     elseif self.selected == 2 then
-      GUI.stack.active = 2     -- show Settings page
+      GUI.stack.active = 2
     end
-  end
+end
+
 }
 
 local sld_exposure = dt.new_widget("slider") {
