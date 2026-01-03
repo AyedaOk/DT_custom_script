@@ -1,8 +1,9 @@
 # Darktable Lua Scripts Collection
 
-A collection of enhanced Darktable Lua plugins, including improved focus stacking tools, AI utilities, and SAM2 segmentation support.
+A collection of enhanced Darktable Lua plugins, including improved focus stacking tools and AI utilities.
 
 ## Table of Contents
+- SAM3 Segmentation Plugin  
 - SAM2 Segmentation Plugin  
 - Enfuse Simple  
 - Enfuse Advanced  
@@ -10,11 +11,19 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 
 ---
 
+# SAM3 AI Masking Plugin
+## Description
+A Darktable plugin that uses **Meta AI’s SAM3 image segmentation model** to generate masks directly from Darktable.
+
+- Installation video → https://youtu.be/i08ccYK93Sg  
+
+---
+
 # SAM2 AI Masking Plugin
 ## Description
 A Darktable plugin that uses **Meta AI’s SAM2 image segmentation model** to generate masks directly from Darktable.
 
-- Linux install video → https://youtu.be/C98gejXkQqI  
+- Installation video → https://youtu.be/eEfsPIzWtTQ  
 
 ---
 
@@ -22,11 +31,9 @@ A Darktable plugin that uses **Meta AI’s SAM2 image segmentation model** to ge
 ## Description
 A simplified focus stacking and HDR plugin using `enfuse` and `align_image_stack`.
 
-Differences from Enfuse Advanced:
-• Simplier  
-• Fully cross‑platform (Linux, macOS, Windows)
-
-Install video → https://youtu.be/dcHRvXXtQOY
+- Simplier than Enfuse Advanced  
+- Fully cross‑platform (Linux, macOS, Windows)
+- Instalation video → https://youtu.be/dcHRvXXtQOY
 
 ---
 

@@ -18,10 +18,9 @@ script_data.metadata = {
 -----------------------------------------------------------------------
 -- Module state
 -----------------------------------------------------------------------
-local mE = {}
-mE.widgets = {}
-mE.event_registered = false
-mE.module_installed = false
+_G.__SAM3_STATE = _G.__SAM3_STATE or { module_installed = false, event_registered = false }
+local mE = _G.__SAM3_STATE
+
 
 -- Preferences module name
 local mod = "module_SAM3_tools"
@@ -61,14 +60,51 @@ local sam3_path_picker = dt.new_widget("file_chooser_button"){
   tooltip = _("Path to the sam3-tools executable"),
 }
 
+local output_path = dt.new_widget("file_chooser_button"){
+  title = _("Select mask output folder"),
+  value = dt.preferences.read(mod, "sam3_out", "string"),
+  is_directory = true,
+  tooltip = _("Where to save generated masks. Leave empty to save next to the original image."),
+}
+
 local sam3_save_button = dt.new_widget("button"){
   label = _("Save"),
   clicked_callback = function()
     dt.preferences.write(mod, "sam3_bin", "string", sam3_path_picker.value)
+    dt.preferences.write(mod, "sam3_out", "string", output_path.value)
     GUI.stack.active = 1
-    dt.print(_("SAM3 executable path updated"))
+    dt.print(_("SAM3 settings reset"))
   end
 }
+
+local reset_button = dt.new_widget("button"){
+  label = _("Reset Mask folder"),
+  clicked_callback = function()
+    dt.preferences.write(mod, "sam3_out", "string", "")
+    GUI.stack.active = 1
+    dt.print(_("Output folder cleared. Masks will be saved next to the image."))
+  end
+}
+
+dt.preferences.register(
+  mod,
+  "sam3_out",
+  "directory",
+  _("SAM3 Mask output folder"),
+  _("Root folder where masks will be saved (empty = alongside original)"),
+  ""
+)
+
+dt.preferences.register(
+  mod,
+  "sam3_bin",
+  "directory",
+  _("SAM3 binary path"),
+  _("Binary path for SAM3 executable"),
+  ""
+)
+
+
 
 -----------------------------------------------------------------------
 -- MAIN SAM3 UI
@@ -102,7 +138,7 @@ local sld_nb_mask = dt.new_widget("slider") {
 -- Show prompt box only when Text mode is selected
 entry_prompt.visible = (cbb_mode.value == "Text")
 cbb_mode.changed_callback = function(self)
-  entry_prompt.visible = (self.value == "Text")
+entry_prompt.visible = (self.value == "Text")
 end
 
 -----------------------------------------------------------------------
@@ -110,6 +146,7 @@ end
 -----------------------------------------------------------------------
 local function btt_edit()
   local images = dt.gui.selection()
+
   if not images or #images == 0 then
     dt.print(_("No image available"))
     return
@@ -123,6 +160,45 @@ local function btt_edit()
     GUI.stack.active = 2
     return
   end
+
+  local crop_on = false
+  if tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
+    dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
+    crop_on = true
+    dt.print_log("Crop desactivated")
+  end
+
+  local flip_on = false
+  if tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
+    dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
+    flip_on = true
+    dt.print_log("Flip desactivated")
+  end
+
+  local canvas_on = false
+  if tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
+    dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
+    canvas_on = true
+    dt.print_log("Canvas desactivated")
+  end
+
+  local borders_on = false
+  if tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
+    dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
+    borders_on = true
+    dt.print_log("Borders desactivated")
+  end
+
+  local lens_on = false
+  if tonumber(dt.gui.action("iop/lens", "enable")) == 1 then
+    dt.gui.action("iop/lens", 0, "enable", "off", 1.0)
+    lens_on = true
+    dt.print_log("Lens desactivated")
+  end
+
+  dt.gui.views.darkroom.display_image()
+
+  local root_dir = dt.preferences.read(mod, "sam3_out", "directory")
 
   for _, img in ipairs(images) do
     local is_windows = package.config:sub(1,1) == "\\"
@@ -148,8 +224,7 @@ local function btt_edit()
       end
 
       if is_windows then
-        -- basic quoting for cmd (avoid quotes inside prompt if possible)
-        prompt = tostring(prompt):gsub('"', "'")
+         prompt = tostring(prompt):gsub('"', "'")
         mode_flag = string.format(' --text "%s"', prompt)
       else
         mode_flag = " --text " .. shell_quote_posix(prompt)
@@ -182,25 +257,71 @@ local function btt_edit()
       for file in io.popen(list_cmd):lines() do
         if file:match("_mask") then
           local src = tmp_dir .. "\\" .. file
-          local dst = out_dir .. "\\" .. file
+          local dst
+          root_dir = tostring(root_dir or "")
+          if root_dir == "(null)" then root_dir = "" end
+          if not root_dir or root_dir == "" then
+            dst = out_dir .. "\\" .. file
+          else
+            dst = root_dir .. "\\" .. file
+          end
           local move_cmd = string.format('cmd /C move /Y "%s" "%s"', src, dst)
           os.execute(move_cmd)
           dt.print_log("Mask saved: " .. dst)
+          dt.print("Mask saved")
         end
       end
     else
       for file in io.popen('ls "' .. tmp_dir .. '"'):lines() do
         if file:match("_mask") then
           local src = tmp_dir .. "/" .. file
-          local dst = out_dir .. "/" .. file
+          local dst
+          root_dir = tostring(root_dir or "")
+          --dt.print_log("root_dir_raw type=" .. type(root_dir) .. " str=" .. tostring(root_dir))
+          if root_dir == "(null)" then root_dir = "" end
+          if not root_dir or root_dir == "" then
+            dst = out_dir .. "/" .. file
+          else
+            dst = root_dir .. "/" .. file
+          end
+
+
           os.execute(string.format('mv "%s" "%s"', src, dst))
           dt.print_log("Mask saved: " .. dst)
+          dt.print("Mask saved")
         end
       end
     end
 
+      -- Re-enable modules that were desactivated
+  if crop_on then
+    dt.gui.action("iop/crop", 0, "enable", "on", 1.0)
+    dt.print_log("Crop re-enable")
+  end
+
+  if flip_on then
+    dt.gui.action("iop/flip", 0, "enable", "on", 1.0)
+    dt.print_log("Flip re-enable")
+  end
+
+  if canvas_on then
+    dt.gui.action("iop/enlargecanvas", 0, "enable", "on", 1.0)
+    dt.print_log("Canvas re-enable")
+  end
+
+  if borders_on then
+    dt.gui.action("iop/borders", 0, "enable", "on", 1.0)
+    dt.print_log("Borders re-enable")
+  end
+
+  if lens_on then
+    dt.gui.action("iop/lens", 0, "enable", "on", 1.0)
+    dt.print_log("Lens re-enable")
+  end
+
     os.remove(png_path)
   end
+
 end
 
 local editor_button = dt.new_widget("button") {
@@ -221,6 +342,13 @@ local cbb_menu = dt.new_widget("combobox"){
   end
 }
 
+cbb_menu.changed_callback = function(w)
+  if not GUI.stack then return end
+  local idx = w.selected or 1
+  if idx < 1 then idx = 1 end
+  GUI.stack.active = idx
+end
+
 -----------------------------------------------------------------------
 -- BUILD GUI STACK
 -----------------------------------------------------------------------
@@ -236,6 +364,8 @@ GUI.main_page = dt.new_widget("box"){
 GUI.settings_page = dt.new_widget("box"){
   orientation = "vertical",
   sam3_path_picker,
+  output_path,
+  reset_button,
   sam3_save_button
 }
 
@@ -244,7 +374,7 @@ GUI.stack = dt.new_widget("stack"){
   GUI.settings_page
 }
 
--- If no executable configured → go to Settings first
+-- If no executable configured go to Settings first
 local saved = dt.preferences.read(mod, "sam3_bin", "string") or ""
 if saved == "" then
   GUI.stack.active = 2
@@ -256,29 +386,33 @@ end
 -- INSTALL MODULE
 -----------------------------------------------------------------------
 local function install_module()
-  if not mE.module_installed then
-    dt.register_lib(
+  if mE.module_installed then return end
+  dt.register_lib(
       "SAM3",
       _("SAM3"),
       true,
       false,
       {[dt.gui.views.darkroom] = {"DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100}},
-      dt.new_widget("box") {
-        orientation = "vertical",
-        GUI.stack
-      },
+      dt.new_widget("box") { orientation = "vertical", GUI.stack },
       nil, nil
     )
-    mE.module_installed = true
-  end
+  mE.module_installed = true
+end
+
+local function safe_get_lib(name)
+  local ok, lib = pcall(function() return dt.gui.libs[name] end)
+  if ok then return lib end
+  return nil
 end
 
 local function destroy()
-  dt.gui.libs["SAM3"].visible = false
+  local lib = safe_get_lib("SAM3")
+  if lib then lib.visible = false end
 end
 
 local function restart()
-  dt.gui.libs["SAM3"].visible = true
+  local lib = safe_get_lib("SAM3")
+  if lib then lib.visible = true end
 end
 
 -----------------------------------------------------------------------
