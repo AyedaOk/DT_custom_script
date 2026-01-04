@@ -1,7 +1,7 @@
 local dt = require "darktable"
 local du = require "lib/dtutils"
 du.check_min_api_version("7.0.0", "SAM2")
-
+dt.print_log("SAM2 loaded")
 local gettext = dt.gettext.gettext
 local function _(msgid) return gettext(msgid) end
 
@@ -18,15 +18,12 @@ script_data.metadata = {
 -----------------------------------------------------------------------
 -- Module state
 -----------------------------------------------------------------------
-local mE = {}
-mE.widgets = {}
-mE.event_registered = false
-mE.module_installed = false
+_G.__SAM2_STATE = _G.__SAM2_STATE or { module_installed = false, event_registered = false }
+local mE = _G.__SAM2_STATE
 
--- Preferences module name
 local mod = "module_SAM2_tools"
 
-GUI = {}
+local GUI = {}
 
 -----------------------------------------------------------------------
 -- Helper: export PNG
@@ -56,10 +53,11 @@ local sam2_save_button = dt.new_widget("button"){
   label = _("Save"),
   clicked_callback = function()
     dt.preferences.write(mod, "sam2_bin", "string", sam2_path_picker.value)
-    GUI.stack.active = 1
+    if GUI.stack then GUI.stack.active = 1 end
     dt.print(_("SAM2 executable path updated"))
   end
 }
+
 
 -----------------------------------------------------------------------
 -- MAIN SAM2 UI
@@ -189,6 +187,13 @@ local cbb_menu = dt.new_widget("combobox"){
   end
 }
 
+cbb_menu.changed_callback = function(w)
+  if not GUI.stack then return end
+  local idx = w.selected or 1
+  if idx < 1 then idx = 1 end
+  GUI.stack.active = idx
+end
+
 -----------------------------------------------------------------------
 -- BUILD GUI STACK
 -----------------------------------------------------------------------
@@ -222,30 +227,36 @@ end
 -----------------------------------------------------------------------
 -- INSTALL MODULE
 -----------------------------------------------------------------------
+local function safe_get_lib(name)
+  local ok, lib = pcall(function() return dt.gui.libs[name] end)
+  if ok then return lib end
+  return nil
+end
+
 local function install_module()
-  if not mE.module_installed then
-    dt.register_lib(
-      "SAM2",
-      _("SAM2"),
-      true,
-      false,
-      {[dt.gui.views.darkroom] = {"DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100}},
-      dt.new_widget("box") {
-        orientation = "vertical",
-        GUI.stack
-      },
-      nil, nil
-    )
-    mE.module_installed = true
-  end
+  if mE.module_installed then return end
+  mE.module_installed = true
+  if safe_get_lib("SAM2") then return end
+  dt.register_lib(
+    "SAM2",
+    _("SAM2"),
+    true,
+    false,
+    {[dt.gui.views.darkroom] = {"DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100}},
+    dt.new_widget("box"){ orientation = "vertical", GUI.stack },
+    nil, nil
+  )
+  mE.module_installed = true
 end
 
 local function destroy()
-  dt.gui.libs["SAM2"].visible = false
+  local lib = safe_get_lib("SAM2")
+  if lib then lib.visible = false end
 end
 
 local function restart()
-  dt.gui.libs["SAM2"].visible = true
+  local lib = safe_get_lib("SAM2")
+  if lib then lib.visible = true end
 end
 
 -----------------------------------------------------------------------
