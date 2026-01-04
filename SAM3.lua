@@ -1,9 +1,10 @@
 local dt = require "darktable"
 local du = require "lib/dtutils"
 du.check_min_api_version("7.0.0", "SAM3")
-
+dt.print_log("SAM3 loaded")
 local gettext = dt.gettext.gettext
 local function _(msgid) return gettext(msgid) end
+
 
 -----------------------------------------------------------------------
 -- Script metadata
@@ -21,11 +22,9 @@ script_data.metadata = {
 _G.__SAM3_STATE = _G.__SAM3_STATE or { module_installed = false, event_registered = false }
 local mE = _G.__SAM3_STATE
 
-
--- Preferences module name
 local mod = "module_SAM3_tools"
 
-GUI = {}
+local GUI = {}
 
 -----------------------------------------------------------------------
 -- Helper: export PNG
@@ -385,8 +384,16 @@ end
 -----------------------------------------------------------------------
 -- INSTALL MODULE
 -----------------------------------------------------------------------
+local function safe_get_lib(name)
+  local ok, lib = pcall(function() return dt.gui.libs[name] end)
+  if ok then return lib end
+  return nil
+end
+
 local function install_module()
   if mE.module_installed then return end
+  mE.module_installed = true
+  if safe_get_lib("SAM3") then return end
   dt.register_lib(
       "SAM3",
       _("SAM3"),
@@ -396,14 +403,8 @@ local function install_module()
       dt.new_widget("box") { orientation = "vertical", GUI.stack },
       nil, nil
     )
-  mE.module_installed = true
 end
 
-local function safe_get_lib(name)
-  local ok, lib = pcall(function() return dt.gui.libs[name] end)
-  if ok then return lib end
-  return nil
-end
 
 local function destroy()
   local lib = safe_get_lib("SAM3")
