@@ -33,8 +33,12 @@ local function export_to_temp_png(img, size)
   local base = img.filename:match("(.+)%..+$")
   local temp_file = dt.configuration.tmp_dir .. "/" .. base .. ".png"
   local png_exporter = dt.new_format("png")
-  png_exporter.max_width = size
-  png_exporter.max_height = size
+  local png_size = math.tointeger(size)
+  if not png_size then
+    png_size = math.floor(tonumber(size) or 0)
+  end
+  png_exporter.max_width = png_size
+  png_exporter.max_height = png_size
   png_exporter:write_image(img, temp_file, true)
   dt.print_log(string.format("Exported %s to %s", img.filename, temp_file))
   return temp_file
@@ -66,11 +70,23 @@ local output_path = dt.new_widget("file_chooser_button"){
   tooltip = _("Where to save generated masks. Leave empty to save next to the original image."),
 }
 
+local disable_modules_default = dt.preferences.read(mod, "sam3_disable_modules", "bool")
+if disable_modules_default == nil then
+  disable_modules_default = true
+end
+
+local disable_modules_toggle = dt.new_widget("check_button"){
+  label = _("Disable modules during mask generation"),
+  value = disable_modules_default,
+  tooltip = _("Temporarily disable crop/flip/canvas/borders/lens while generating masks."),
+}
+
 local sam3_save_button = dt.new_widget("button"){
   label = _("Save"),
   clicked_callback = function()
     dt.preferences.write(mod, "sam3_bin", "string", sam3_path_picker.value)
     dt.preferences.write(mod, "sam3_out", "string", output_path.value)
+    dt.preferences.write(mod, "sam3_disable_modules", "bool", disable_modules_toggle.value)
     GUI.stack.active = 1
     dt.print(_("SAM3 settings reset"))
   end
@@ -101,6 +117,15 @@ dt.preferences.register(
   _("SAM3 binary path"),
   _("Binary path for SAM3 executable"),
   ""
+)
+
+dt.preferences.register(
+  mod,
+  "sam3_disable_modules",
+  "bool",
+  _("SAM3 disable modules"),
+  _("Disable crop/flip/canvas/borders/lens during mask generation"),
+  true
 )
 
 
@@ -160,46 +185,83 @@ local function btt_edit()
     return
   end
 
+  local disable_modules = dt.preferences.read(mod, "sam3_disable_modules", "bool")
+  if disable_modules == nil then
+    disable_modules = true
+  end
+
   local crop_on = false
-  if tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
+  if disable_modules and tonumber(dt.gui.action("iop/crop", "enable")) == 1 then
     dt.gui.action("iop/crop", 0, "enable", "off", 1.0)
     crop_on = true
     dt.print_log("Crop desactivated")
   end
 
   local flip_on = false
-  if tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
+  if disable_modules and tonumber(dt.gui.action("iop/flip", "enable")) == 1 then
     dt.gui.action("iop/flip", 0, "enable", "off", 1.0)
     flip_on = true
     dt.print_log("Flip desactivated")
   end
 
   local canvas_on = false
-  if tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
+  if disable_modules and tonumber(dt.gui.action("iop/enlargecanvas", "enable")) == 1 then
     dt.gui.action("iop/enlargecanvas", 0, "enable", "off", 1.0)
     canvas_on = true
     dt.print_log("Canvas desactivated")
   end
 
   local borders_on = false
-  if tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
+  if disable_modules and tonumber(dt.gui.action("iop/borders", "enable")) == 1 then
     dt.gui.action("iop/borders", 0, "enable", "off", 1.0)
     borders_on = true
     dt.print_log("Borders desactivated")
   end
 
   local lens_on = false
-  if tonumber(dt.gui.action("iop/lens", "enable")) == 1 then
+  if disable_modules and tonumber(dt.gui.action("iop/lens", "enable")) == 1 then
     dt.gui.action("iop/lens", 0, "enable", "off", 1.0)
     lens_on = true
     dt.print_log("Lens desactivated")
   end
 
-  dt.gui.views.darkroom.display_image()
+  local function restore_modules()
+    if not disable_modules then
+      return
+    end
+    if crop_on then
+      dt.gui.action("iop/crop", 0, "enable", "on", 1.0)
+      dt.print_log("Crop re-enable")
+    end
+
+    if flip_on then
+      dt.gui.action("iop/flip", 0, "enable", "on", 1.0)
+      dt.print_log("Flip re-enable")
+    end
+
+    if canvas_on then
+      dt.gui.action("iop/enlargecanvas", 0, "enable", "on", 1.0)
+      dt.print_log("Canvas re-enable")
+    end
+
+    if borders_on then
+      dt.gui.action("iop/borders", 0, "enable", "on", 1.0)
+      dt.print_log("Borders re-enable")
+    end
+
+    if lens_on then
+      dt.gui.action("iop/lens", 0, "enable", "on", 1.0)
+      dt.print_log("Lens re-enable")
+    end
+  end
+
+  if disable_modules then
+    dt.gui.views.darkroom.display_image()
+  end
 
   local root_dir = dt.preferences.read(mod, "sam3_out", "directory")
 
-  for _, img in ipairs(images) do
+  for image_index, img in ipairs(images) do
     local is_windows = package.config:sub(1,1) == "\\"
     local png_path = export_to_temp_png(img, sld_size.value)
     local tmp_dir = dt.configuration.tmp_dir
@@ -207,6 +269,9 @@ local function btt_edit()
 
     local mode = cbb_mode.value
     local nb_mask = math.tointeger(sld_nb_mask.value)
+    if not nb_mask then
+      nb_mask = math.floor(tonumber(sld_nb_mask.value) or 0)
+    end
 
     -- Build mode flag
     local mode_flag = ""
@@ -218,6 +283,7 @@ local function btt_edit()
       local prompt = entry_prompt.text or ""
       if prompt == "" then
         dt.print(_("Text mode selected but prompt is empty"))
+        restore_modules()
         os.remove(png_path)
         return
       end
@@ -246,9 +312,21 @@ local function btt_edit()
 
     dt.print_log("Running: " .. command)
     local h = io.popen(command)
+    if not h then
+      dt.print(_("SAM3 command failed or returned no output"))
+      restore_modules()
+      os.remove(png_path)
+      return
+    end
     local out = h:read("*a")
     h:close()
     dt.print_log(out or "")
+    if not out or out == "" then
+      dt.print(_("SAM3 command failed or returned no output"))
+      restore_modules()
+      os.remove(png_path)
+      return
+    end
 
     -- Move generated masks back to the image folder
     if is_windows then
@@ -292,31 +370,7 @@ local function btt_edit()
       end
     end
 
-      -- Re-enable modules that were desactivated
-  if crop_on then
-    dt.gui.action("iop/crop", 0, "enable", "on", 1.0)
-    dt.print_log("Crop re-enable")
-  end
-
-  if flip_on then
-    dt.gui.action("iop/flip", 0, "enable", "on", 1.0)
-    dt.print_log("Flip re-enable")
-  end
-
-  if canvas_on then
-    dt.gui.action("iop/enlargecanvas", 0, "enable", "on", 1.0)
-    dt.print_log("Canvas re-enable")
-  end
-
-  if borders_on then
-    dt.gui.action("iop/borders", 0, "enable", "on", 1.0)
-    dt.print_log("Borders re-enable")
-  end
-
-  if lens_on then
-    dt.gui.action("iop/lens", 0, "enable", "on", 1.0)
-    dt.print_log("Lens re-enable")
-  end
+    restore_modules()
 
     os.remove(png_path)
   end
@@ -364,6 +418,7 @@ GUI.settings_page = dt.new_widget("box"){
   orientation = "vertical",
   sam3_path_picker,
   output_path,
+  disable_modules_toggle,
   reset_button,
   sam3_save_button
 }
