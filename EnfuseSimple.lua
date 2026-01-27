@@ -127,7 +127,7 @@ local function do_merge()
     dt.print(_("Select at least two images"))
     return
   end
-
+  dt.print(_("Starting EnfuseSimple"))
   -- retrieve binaries from preferences
   local enfuse_bin = dt.preferences.read(mod, "enfuse_bin", "string") or "enfuse"
   local align_bin  = dt.preferences.read(mod, "align_bin", "string") or "align_image_stack"
@@ -152,9 +152,10 @@ local function do_merge()
 
   -- build output filename
   local out_dir = images[1].path
+  local path_sep = "/"
   local first_name = images[1].filename
   local base = first_name:match("(.+)%.[^%.]+$") or first_name
-  local out_file = string.format("%s/%s-%s.tif", out_dir, base, preset)
+  local out_file = string.format("%s%s%s-%s.tif", out_dir, path_sep, base, preset)
 
   local exposurewt   = tostring(sld_exposure.value):gsub(",", ".")
   local saturationwt = tostring(sld_saturation.value):gsub(",", ".")
@@ -174,6 +175,10 @@ local function do_merge()
 
   -- Detect OS platform so we only add cmd /c on Windows
   local is_windows = package.config:sub(1,1) == "\\"   -- true if Windows path separator
+  if is_windows then
+    path_sep = "\\"
+    out_file = string.format("%s%s%s-%s.tif", out_dir, path_sep, base, preset)
+  end
 
   -- Align images
   local align_prefix
@@ -236,8 +241,6 @@ local function do_merge()
   dt.print(_("Enfuse finished."))
   dt.print_log(out2)
 
-  dt.database.import(out_file)
-
   -- cleanup
   local function unquote(p) return p:gsub('^"(.-)"$', "%1") end
   for _, p in ipairs(img_paths) do os.remove(unquote(p)) end
@@ -246,11 +249,39 @@ local function do_merge()
       os.remove(string.format("%s%04d.tif", align_prefix, i))
     end
   end
+
+  local f = io.open(out_file, "rb")
+  if not f then
+    dt.print(_("Enfuse failed: output file was not created."))
+    dt.print_log("Enfuse failed: output file was not created.")
+    return
+  end
+  f:close()
+
+  dt.database.import(out_file)
 end
 
 -----------------------------------------------------------------------
 -- Executable path selection UI
 -----------------------------------------------------------------------
+dt.preferences.register(
+  mod,
+  "enfuse_bin",
+  "string",
+  _("Enfuse binary path"),
+  _("Path to the Enfuse executable"),
+  ""
+)
+
+dt.preferences.register(
+  mod,
+  "align_bin",
+  "string",
+  _("Align image stack binary path"),
+  _("Path to the align_image_stack executable"),
+  ""
+)
+
 local exe_enfuse = dt.new_widget("file_chooser_button"){
   title = _("Select enfuse executable"),
   value = dt.preferences.read(mod, "enfuse_bin", "string") or "enfuse",
