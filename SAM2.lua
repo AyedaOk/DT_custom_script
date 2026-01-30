@@ -354,7 +354,12 @@ local cbb_menu = dt.new_widget("combobox"){
   "Settings",
   selected = 1,
   changed_callback = function(self)
-    GUI.stack.active = self.selected
+    dt.print_log("SAM2 menu changed; GUI.stack=" .. tostring(GUI.stack))
+    if GUI.stack then
+      GUI.stack.active = self.selected
+    else
+      dt.print_log("SAM2: GUI.stack not ready; menu change ignored")
+    end
   end
 }
 
