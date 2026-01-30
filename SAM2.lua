@@ -74,8 +74,8 @@ local disable_modules_toggle = dt.new_widget("check_button"){
 local sam2_save_button = dt.new_widget("button"){
   label = _("Save"),
   clicked_callback = function()
-    dt.preferences.write(mod, "sam2_bin", "string", sam2_path_picker.value)
-    dt.preferences.write(mod, "sam2_out", "string", output_path.value)
+    dt.preferences.write(mod, "sam2_bin", "directory", sam2_path_picker.value or "")
+    dt.preferences.write(mod, "sam2_out", "directory", output_path.value or "")
     dt.preferences.write(mod, "sam2_disable_modules", "bool", disable_modules_toggle.value)
     if GUI.stack then GUI.stack.active = 1 end
     dt.print(_("SAM2 settings reset"))
