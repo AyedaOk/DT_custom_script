@@ -84,8 +84,8 @@ local disable_modules_toggle = dt.new_widget("check_button"){
 local sam3_save_button = dt.new_widget("button"){
   label = _("Save"),
   clicked_callback = function()
-    dt.preferences.write(mod, "sam3_bin", "string", sam3_path_picker.value)
-    dt.preferences.write(mod, "sam3_out", "string", output_path.value)
+    dt.preferences.write(mod, "sam3_bin", "directory", sam3_path_picker.value or "")
+    dt.preferences.write(mod, "sam3_out", "directory", output_path.value or "")
     dt.preferences.write(mod, "sam3_disable_modules", "bool", disable_modules_toggle.value)
     GUI.stack.active = 1
     dt.print(_("SAM3 settings reset"))
