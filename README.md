@@ -3,11 +3,20 @@
 A collection of enhanced Darktable Lua plugins, including improved focus stacking tools and AI utilities.
 
 ## Table of Contents
+- RawForge
 - SAM3 Segmentation Plugin  
 - SAM2 Segmentation Plugin  
 - Enfuse Simple  
 - Enfuse Advanced  
 - AI Toolbox  
+
+---
+
+# RawForge
+## Description
+A Darktable plugin that runs **RawForge** in the background to denoise or refine RAW files and generate DNG output directly from Darktable.
+
+- Video → Coming soon
 
 ---
 
@@ -69,6 +78,5 @@ A collection of AI-powered helpers for Darktable.
 - Toolbox demo → https://youtu.be/bGFSdvZCsN0
 
 ---
-
 
 
