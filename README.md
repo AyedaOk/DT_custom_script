@@ -14,7 +14,7 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 
 # RawForge
 ## Description
-A Darktable plugin that runs **RawForge** in the background to denoise or refine RAW files and generate DNG output directly from Darktable.
+A Darktable plugin that runs **[RawForge](https://github.com/rymuelle/RawForge)** in the background to denoise or refine RAW files and generate DNG output directly from Darktable.
 
 - Video → Coming soon
 
