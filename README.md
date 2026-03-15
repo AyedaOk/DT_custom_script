@@ -16,7 +16,7 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 ## Description
 A Darktable plugin that runs **[RawForge](https://github.com/rymuelle/RawForge)** and **[ExifTool](https://exiftool.org/)**  the background to denoise or refine RAW files and generate DNG output directly from Darktable.
 
-- Video → Coming soon
+- Installation video → https://youtu.be/K9vqhV8bCjY
 
 ---
 
