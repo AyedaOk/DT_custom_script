@@ -125,6 +125,7 @@ local function do_denoise()
     return
   end
 
+  dt.print(_("Starting RawForge"))
   local rawforge_bin = dt.preferences.read(mod, "rawforge_bin", "string") or "rawforge"
   local exif_bin = dt.preferences.read(mod, "exif_bin", "string") or "exiftool"
 
@@ -190,15 +191,15 @@ local function do_denoise()
     local command_exif
     if is_windows then
       command_exif = string.format(
-        'cmd /c ""%s" -overwrite_original -TagsFromFile "%s" -all:all "%s""',
+        'cmd /c ""%s" -overwrite_original -m -P -TagsFromFile "%s" -IFD0:Make -IFD0:Model -IFD0:UniqueCameraModel -EXIF:DateTimeOriginal -EXIF:CreateDate -EXIF:ModifyDate -EXIF:OffsetTime* -EXIF:Artist -EXIF:Copyright -EXIF:Lens* -EXIF:Focal* -EXIF:Exposure* -EXIF:ISO -XMP:all -IPTC:all -IFD0:CalibrationIlluminant1#=21 "%s""',
         exif_bin, input_file, out_file
       )
     else
       command_exif = string.format(
-        '"%s" -overwrite_original -TagsFromFile "%s" -all:all "%s"',
-        exif_bin, input_file, out_file
+        '"%s" -overwrite_original -m -P -TagsFromFile "%s" -IFD0:Make -IFD0:Model -IFD0:UniqueCameraModel -EXIF:DateTimeOriginal -EXIF:CreateDate -EXIF:ModifyDate -EXIF:OffsetTime* -EXIF:Artist -EXIF:Copyright -EXIF:Lens* -EXIF:Focal* -EXIF:Exposure* -EXIF:ISO -XMP:all -IPTC:all -IFD0:CalibrationIlluminant1#=21 "%s"',
+         exif_bin, input_file, out_file
       )
-    end
+     end
 
     dt.print_log("Running: " .. command_exif)
     local h2 = io.popen(command_exif)
