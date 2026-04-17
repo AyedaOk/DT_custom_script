@@ -83,12 +83,20 @@ local cbb_models = dt.new_widget("combobox"){
   label = _("Model"),
   tooltip = _("Select RawForge denoise model"),
   selected = 1,
+
+  -- Bayer  models
   "TreeNetDenoise",
   "TreeNetDenoiseLight",
-  "TreeNetDenoiseHeavy",
   "TreeNetDenoiseSuperLight",
+  "TreeNetDenoiseHeavy",
   "Deblur",
   "DeepSharpen",
+
+  -- X-Trans models
+  "TreeNetDenoiseXTrans",
+  "XFormerXTrans",
+  "XFormerXTrans352",
+  "RestormerXTrans",
 }
 
 local sld_lumi = dt.new_widget("slider") {
@@ -113,6 +121,12 @@ local sld_chroma = dt.new_widget("slider") {
   step = 0.1,
   digits = 1,
   value = 0,
+}
+
+local cbt_clip_highlights = dt.new_widget("check_button"){
+  label = _("Preserve Clipped Highlights"),
+  tooltip = _("Do not run model on clipped highlights"),
+  value = false
 }
 
 -----------------------------------------------------------------------
@@ -141,6 +155,7 @@ local function do_denoise()
   local lumi = tostring(sld_lumi.value):gsub(",", ".")
   local chroma = tostring(sld_chroma.value):gsub(",", ".")
   local is_refine_model = (model == "Deblur" or model == "DeepSharpen")
+  local clip_flag = cbt_clip_highlights.value and "--clip_highlights" or ""
 
   for image_index, img in ipairs(images) do
     local input_file = img.path .. sep .. img.filename
@@ -156,8 +171,8 @@ local function do_denoise()
         )
       else
         command_rawforge = string.format(
-          'cmd /c ""%s" %s "%s" "%s" --cfa --lumi %s --chroma %s"',
-          rawforge_bin, model, input_file, out_file, lumi, chroma
+          'cmd /c ""%s" %s "%s" "%s" --cfa --lumi %s --chroma %s %s"',
+          rawforge_bin, model, input_file, out_file, lumi, chroma, clip_flag
         )
       end
     else
@@ -168,8 +183,8 @@ local function do_denoise()
         )
       else
         command_rawforge = string.format(
-          '"%s" %s "%s" "%s" --cfa --lumi %s --chroma %s',
-          rawforge_bin, model, input_file, out_file, lumi, chroma
+          '"%s" %s "%s" "%s" --cfa --lumi %s --chroma %s %s',
+          rawforge_bin, model, input_file, out_file, lumi, chroma, clip_flag
         )
       end
     end
@@ -282,6 +297,7 @@ GUI.options = dt.new_widget("box"){
   cbb_models,
   sld_lumi,
   sld_chroma,
+  cbt_clip_highlights,
   denoise_button,
 }
 
