@@ -1,11 +1,14 @@
 -- RawForge.lua
 
-local dt = require "darktable"
-local du = require "lib/dtutils"
+local dt = require("darktable")
+local du = require("lib/dtutils")
+local df = require("lib/dtutils.file")
 du.check_min_api_version("7.0.0", "RawForge")
 
 local gettext = dt.gettext.gettext
-local function _(msgid) return gettext(msgid) end
+local function _(msgid)
+  return gettext(msgid)
+end
 
 -----------------------------------------------------------------------
 -- Script metadata
@@ -25,8 +28,9 @@ mE.widgets = {}
 mE.event_registered = false
 mE.module_installed = false
 
-local mod = "module_RawForge"
-local GUI = {}
+if df.get_executable_path_preference("rawforge") == nil then
+  df.set_executable_path_preference("rawforge", "")
+end
 
 -----------------------------------------------------------------------
 -- Helpers
@@ -56,30 +60,7 @@ local function build_unique_output_path(dir_path, base_name, sep)
   end
 end
 
------------------------------------------------------------------------
--- UI Widgets (main page)
------------------------------------------------------------------------
-local cbb_menu = dt.new_widget("combobox"){
-  label = _("Menu"),
-  tooltip = _("Switch between RawForge and Settings views"),
-  selected = 1,
-  "RawForge",
-  "Settings",
-  changed_callback = function(self)
-    dt.print_log("RawForge menu changed; GUI.stack=" .. tostring(GUI.stack))
-    if GUI.stack then
-      if self.selected == 1 then
-        GUI.stack.active = 1
-      elseif self.selected == 2 then
-        GUI.stack.active = 2
-      end
-    else
-      dt.print_log("RawForge: GUI.stack not ready; menu change ignored")
-    end
-  end
-}
-
-local cbb_models = dt.new_widget("combobox"){
+local cbb_models = dt.new_widget("combobox")({
   label = _("Model"),
   tooltip = _("Select RawForge denoise model"),
   selected = 1,
@@ -97,9 +78,9 @@ local cbb_models = dt.new_widget("combobox"){
   "XFormerXTrans",
   "XFormerXTrans352",
   "RestormerXTrans",
-}
+})
 
-local sld_lumi = dt.new_widget("slider") {
+local sld_lumi = dt.new_widget("slider")({
   label = _("Lumi"),
   tooltip = _("Luminance noise added back to output (0 to 1)"),
   soft_min = 0,
@@ -109,9 +90,9 @@ local sld_lumi = dt.new_widget("slider") {
   step = 0.1,
   digits = 1,
   value = 0,
-}
+})
 
-local sld_chroma = dt.new_widget("slider") {
+local sld_chroma = dt.new_widget("slider")({
   label = _("Chroma"),
   tooltip = _("Chroma noise added back to output (0 to 1)"),
   soft_min = 0,
@@ -121,13 +102,13 @@ local sld_chroma = dt.new_widget("slider") {
   step = 0.1,
   digits = 1,
   value = 0,
-}
+})
 
-local cbt_clip_highlights = dt.new_widget("check_button"){
+local cbt_clip_highlights = dt.new_widget("check_button")({
   label = _("Preserve Clipped Highlights"),
   tooltip = _("Do not run model on clipped highlights"),
-  value = false
-}
+  value = false,
+})
 
 -----------------------------------------------------------------------
 -- Main processing function
@@ -140,11 +121,10 @@ local function do_denoise()
   end
 
   dt.print(_("Starting RawForge"))
-  local rawforge_bin = dt.preferences.read(mod, "rawforge_bin", "string") or "rawforge"
-  local exif_bin = dt.preferences.read(mod, "exif_bin", "string") or "exiftool"
+  local rawforge_bin = df.check_if_bin_exists("rawforge")
 
-  if rawforge_bin == "" or exif_bin == "" then
-    dt.print(_("Please set executable paths in Settings"))
+  if not rawforge_bin then
+    dt.print(_("rawforge not found; install it or set its path in executable manager"))
     return
   end
 
@@ -165,26 +145,32 @@ local function do_denoise()
     local command_rawforge
     if is_windows then
       if is_refine_model then
-        command_rawforge = string.format(
-          'cmd /c ""%s" %s "%s" "%s""',
-          rawforge_bin, model, input_file, out_file
-        )
+        command_rawforge = string.format('cmd /c ""%s" %s "%s" "%s""', rawforge_bin, model, input_file, out_file)
       else
         command_rawforge = string.format(
           'cmd /c ""%s" %s "%s" "%s" --cfa --lumi %s --chroma %s %s"',
-          rawforge_bin, model, input_file, out_file, lumi, chroma, clip_flag
+          rawforge_bin,
+          model,
+          input_file,
+          out_file,
+          lumi,
+          chroma,
+          clip_flag
         )
       end
     else
       if is_refine_model then
-        command_rawforge = string.format(
-          '"%s" %s "%s" "%s"',
-          rawforge_bin, model, input_file, out_file
-        )
+        command_rawforge = string.format('"%s" %s "%s" "%s"', rawforge_bin, model, input_file, out_file)
       else
         command_rawforge = string.format(
           '"%s" %s "%s" "%s" --cfa --lumi %s --chroma %s %s',
-          rawforge_bin, model, input_file, out_file, lumi, chroma, clip_flag
+          rawforge_bin,
+          model,
+          input_file,
+          out_file,
+          lumi,
+          chroma,
+          clip_flag
         )
       end
     end
@@ -203,28 +189,6 @@ local function do_denoise()
       goto continue
     end
 
-    local command_exif
-    if is_windows then
-      command_exif = string.format(
-        'cmd /c ""%s" -overwrite_original -TagsFromFile "%s" -all:all -IFD0:CalibrationIlluminant1#=21 "%s""',
-        exif_bin, input_file, out_file
-      )
-    else
-        command_exif = string.format(
-          '"%s" -overwrite_original -TagsFromFile "%s" -all:all -IFD0:CalibrationIlluminant1#=21 "%s"',
-          exif_bin, input_file, out_file
-        )
-    end
-
-    dt.print_log("Running: " .. command_exif)
-    local h2 = io.popen(command_exif)
-    local exif_out = ""
-    if h2 then
-      exif_out = h2:read("*a") or ""
-      h2:close()
-    end
-    dt.print_log(exif_out)
-
     dt.database.import(out_file)
     dt.print(_("RawForge done for ") .. img.filename)
 
@@ -232,90 +196,24 @@ local function do_denoise()
   end
 end
 
------------------------------------------------------------------------
--- Executable path selection UI
------------------------------------------------------------------------
-dt.preferences.register(
-  mod,
-  "rawforge_bin",
-  "string",
-  _("RawForge binary path"),
-  _("Path to the RawForge executable"),
-  ""
-)
+local lbl_rawforge = dt.new_widget("section_label")({ label = _("RawForge") })
 
-dt.preferences.register(
-  mod,
-  "exif_bin",
-  "string",
-  _("ExifTool binary path"),
-  _("Path to the exiftool executable"),
-  ""
-)
-
-local exe_rawforge = dt.new_widget("file_chooser_button"){
-  title = _("Select rawforge executable"),
-  value = dt.preferences.read(mod, "rawforge_bin", "string") or "rawforge",
-  is_directory = false,
-  tooltip = _("Path to the rawforge executable"),
-}
-
-local exe_exif = dt.new_widget("file_chooser_button"){
-  title = _("Select exiftool executable"),
-  value = dt.preferences.read(mod, "exif_bin", "string") or "exiftool",
-  is_directory = false,
-  tooltip = _("Path to the exiftool executable"),
-}
-
-local exe_update = dt.new_widget("button"){
-  label = _("Save paths"),
-  clicked_callback = function()
-    dt.preferences.write(mod, "rawforge_bin", "string", exe_rawforge.value)
-    dt.preferences.write(mod, "exif_bin", "string", exe_exif.value)
-    GUI.stack.active = 1
-    dt.print(_("Executable paths updated"))
-  end
-}
-
------------------------------------------------------------------------
--- Labels and buttons
------------------------------------------------------------------------
-local lbl_rawforge = dt.new_widget("section_label"){ label = _("RawForge") }
-
-local denoise_button = dt.new_widget("button") {
+local denoise_button = dt.new_widget("button")({
   label = _("Denoise"),
-  clicked_callback = function(_) do_denoise() end,
-}
+  clicked_callback = function(_)
+    do_denoise()
+  end,
+})
 
------------------------------------------------------------------------
--- GUI layout assembly
------------------------------------------------------------------------
-GUI.options = dt.new_widget("box"){
+local options = dt.new_widget("box")({
   orientation = "vertical",
   lbl_rawforge,
-  cbb_menu,
   cbb_models,
   sld_lumi,
   sld_chroma,
   cbt_clip_highlights,
   denoise_button,
-}
-
-local exe_box = dt.new_widget("box"){
-  orientation = "vertical",
-  exe_rawforge,
-  exe_exif,
-  exe_update,
-}
-
-GUI.stack = dt.new_widget("stack"){ GUI.options, exe_box }
-
-if (dt.preferences.read(mod, "rawforge_bin", "string") or "") == "" or
-   (dt.preferences.read(mod, "exif_bin", "string") or "") == "" then
-  GUI.stack.active = 2
-else
-  GUI.stack.active = 1
-end
+})
 
 -----------------------------------------------------------------------
 -- Module registration
@@ -327,8 +225,8 @@ local function install_module()
       _("RawForge"),
       true,
       false,
-      {[dt.gui.views.lighttable] = {"DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100}},
-      dt.new_widget("box"){ orientation = "vertical", GUI.stack },
+      { [dt.gui.views.lighttable] = { "DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100 } },
+      dt.new_widget("box")({ orientation = "vertical", options }),
       nil,
       nil
     )
@@ -355,12 +253,11 @@ if dt.gui.current_view().id == "lighttable" then
   install_module()
 else
   if not mE.event_registered then
-    dt.register_event("RawForge", "view-changed",
-      function(event, old_view, new_view)
-        if new_view.id == "lighttable" then
-          install_module()
-        end
-      end)
+    dt.register_event("RawForge", "view-changed", function(event, old_view, new_view)
+      if new_view.id == "lighttable" then
+        install_module()
+      end
+    end)
     mE.event_registered = true
   end
 end
