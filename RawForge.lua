@@ -27,10 +27,8 @@ local mE = {}
 mE.widgets = {}
 mE.event_registered = false
 mE.module_installed = false
-
-if df.get_executable_path_preference("rawforge") == nil then
-  df.set_executable_path_preference("rawforge", "")
-end
+local rawforge_bin
+local widget_stack
 
 -----------------------------------------------------------------------
 -- Helpers
@@ -42,6 +40,14 @@ local function file_exists(path)
     return true
   end
   return false
+end
+
+local function get_configured_rawforge_binary()
+  local configured_path = df.get_executable_path_preference("rawforge")
+  if not configured_path or configured_path == "" then
+    return nil
+  end
+  return df.check_if_bin_exists("rawforge")
 end
 
 local function build_unique_output_path(dir_path, base_name, sep)
@@ -121,10 +127,11 @@ local function do_denoise()
   end
 
   dt.print(_("Starting RawForge"))
-  local rawforge_bin = df.check_if_bin_exists("rawforge")
+  rawforge_bin = get_configured_rawforge_binary()
 
   if not rawforge_bin then
-    dt.print(_("rawforge not found; install it or set its path in executable manager"))
+    widget_stack.active = 2
+    dt.print(_("RawForge not found; select the RawForge executable"))
     return
   end
 
@@ -215,6 +222,43 @@ local options = dt.new_widget("box")({
   denoise_button,
 })
 
+local executable_chooser = dt.new_widget("file_chooser_button")({
+  title = _("Select RawForge executable"),
+  value = df.get_executable_path_preference("rawforge"),
+  is_directory = false,
+})
+
+local executable_update = dt.new_widget("button")({
+  label = _("Update"),
+  tooltip = _("Update the RawForge binary path with the selected file"),
+  clicked_callback = function(_)
+    df.set_executable_path_preference("rawforge", executable_chooser.value or "")
+    rawforge_bin = get_configured_rawforge_binary()
+
+    if rawforge_bin then
+      widget_stack.active = 1
+      dt.print(_("RawForge executable updated"))
+    else
+      widget_stack.active = 2
+      dt.print(_("Unable to find the RawForge executable; please try again"))
+    end
+  end,
+})
+
+local executable_options = dt.new_widget("box")({
+  orientation = "vertical",
+  executable_chooser,
+  executable_update,
+})
+
+widget_stack = dt.new_widget("stack")({
+  options,
+  executable_options,
+})
+
+rawforge_bin = get_configured_rawforge_binary()
+widget_stack.active = rawforge_bin and 1 or 2
+
 -----------------------------------------------------------------------
 -- Module registration
 -----------------------------------------------------------------------
@@ -226,7 +270,7 @@ local function install_module()
       true,
       false,
       { [dt.gui.views.lighttable] = { "DT_UI_CONTAINER_PANEL_RIGHT_CENTER", 100 } },
-      dt.new_widget("box")({ orientation = "vertical", options }),
+      dt.new_widget("box")({ orientation = "vertical", widget_stack }),
       nil,
       nil
     )
