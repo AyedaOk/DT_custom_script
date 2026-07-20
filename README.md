@@ -4,6 +4,7 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 
 ## Table of Contents
 - RawForge
+- Convert to DNG
 - SAM3 Segmentation Plugin  
 - SAM2 Segmentation Plugin  
 - Enfuse Simple  
@@ -18,6 +19,14 @@ A Darktable plugin that runs **[RawForge](https://github.com/rymuelle/RawForge)*
 
 - Linux/macOS Installation video → https://youtu.be/K9vqhV8bCjY
 - Windows Installation video → https://youtu.be/XfMdUGGvcj4
+
+---
+
+# Convert to DNG
+## Description
+A Darktable plugin that wraps the selected RAW files' original sensor data in DNG files. Generated DNG files are imported automatically and grouped with their source images.
+
+The plugin requires a Darktable build with AI support because it uses the `darktable.ai` raw tensor and DNG APIs. It does not denoise, demosaic, or otherwise modify the sensor samples.
 
 ---
 
@@ -79,4 +88,3 @@ A collection of AI-powered helpers for Darktable.
 - Toolbox demo → https://youtu.be/bGFSdvZCsN0
 
 ---
-
