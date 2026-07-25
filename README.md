@@ -8,7 +8,6 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 - SAM2 Segmentation Plugin  
 - Enfuse Simple  
 - Enfuse Advanced  
-- AI Toolbox  
 
 ---
 
@@ -67,16 +66,4 @@ images_to_align = table.concat(image_list, " ")
 
 ---
 
-# AI Toolbox
-## Description
-A collection of AI-powered helpers for Darktable.
-
-- Requires **Ollama**.  
-- Can be installed via Docker or natively.
-
-- Docker install video → https://youtu.be/dGwhvTCIbT8  
-- Native install video → https://youtu.be/If6PUnd4zO0  
-- Toolbox demo → https://youtu.be/bGFSdvZCsN0
-
----
 
