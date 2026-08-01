@@ -16,16 +16,15 @@ A collection of enhanced Darktable Lua plugins, including improved focus stackin
 ## Description
 A Darktable plugin that runs **[RawForge](https://github.com/rymuelle/RawForge)** to denoise or refine RAW files and generate DNG output directly from Darktable.
 
-- Linux/macOS Installation video → https://youtu.be/K9vqhV8bCjY
-- Windows Installation video → https://youtu.be/XfMdUGGvcj4
+- Installation video → [https://youtu.be/K9vqhV8bCjY](https://youtu.be/1_R0TLTs3Y0)
 
 ---
 
 # Convert to DNG
 ## Description
-A Darktable plugin that wraps the selected RAW files' original sensor data in DNG files. Generated DNG files are imported automatically and grouped with their source images.
+A Darktable plugin that wraps the selected RAW files' original sensor data in DNG files. Generated DNG files are imported automatically. The plugin requires a Darktable 5.6.
 
-The plugin requires a Darktable build with AI support because it uses the `darktable.ai` raw tensor and DNG APIs. It does not denoise, demosaic, or otherwise modify the sensor samples.
+Installation video → https://youtu.be/pLBcsb_7vPI
 
 ---
 
@@ -72,18 +71,5 @@ end
 table.sort(image_list)
 images_to_align = table.concat(image_list, " ")
 ```
-
----
-
-# AI Toolbox
-## Description
-A collection of AI-powered helpers for Darktable.
-
-- Requires **Ollama**.  
-- Can be installed via Docker or natively.
-
-- Docker install video → https://youtu.be/dGwhvTCIbT8  
-- Native install video → https://youtu.be/If6PUnd4zO0  
-- Toolbox demo → https://youtu.be/bGFSdvZCsN0
 
 ---
