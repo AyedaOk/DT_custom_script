@@ -2,6 +2,7 @@
 
 local dt = require "darktable"
 local du = require "lib/dtutils"
+local dsys = require "lib/dtutils.system"
 du.check_min_api_version("7.0.0", "EnfuseSimple")
 
 local gettext = dt.gettext.gettext
@@ -127,6 +128,7 @@ local function do_merge()
     dt.print(_("Select at least two images"))
     return
   end
+  table.sort(images, function(a, b) return a.filename < b.filename end)
   dt.print(_("Starting EnfuseSimple"))
   -- retrieve binaries from preferences
   local enfuse_bin = dt.preferences.read(mod, "enfuse_bin", "string") or "enfuse"
@@ -204,11 +206,13 @@ local function do_merge()
     end
 
     dt.print_log("Running: " .. command_align)
-    local h = io.popen(command_align)
-    local align_out = h:read("*a")
-    h:close()
+    local align_result = dsys.external_command(command_align)
+    if align_result ~= 0 then
+      dt.print_error("Align failed with status " .. tostring(align_result))
+      dt.print_log("Align failed; temporary files retained for diagnosis")
+      return
+    end
     dt.print(_("Align finished."))
-    dt.print_log(align_out)
 
     paths_for_enfuse = {}
     for i = 0, #images - 1 do
@@ -235,28 +239,31 @@ local function do_merge()
   end
 
   dt.print_log("Running: " .. command_merge)
-  local h2 = io.popen(command_merge)
-  local out2 = h2:read("*a")
-  h2:close()
-  dt.print(_("Enfuse finished."))
-  dt.print_log(out2)
-
-  -- cleanup
-  local function unquote(p) return p:gsub('^"(.-)"$', "%1") end
-  for _, p in ipairs(img_paths) do os.remove(unquote(p)) end
-  if align_prefix then
-    for i = 0, #images - 1 do
-      os.remove(string.format("%s%04d.tif", align_prefix, i))
-    end
+  local merge_result = dsys.external_command(command_merge)
+  if merge_result ~= 0 then
+    dt.print_error("Enfuse failed with status " .. tostring(merge_result))
+    dt.print_log("Enfuse failed; temporary files retained for diagnosis")
+    return
   end
+  dt.print(_("Enfuse finished."))
 
-  local f = io.open(out_file, "rb")
-  if not f then
+  local output_check
+  if is_windows then
+    output_check = string.format('if exist "%s" (exit /b 0) else (exit /b 1)', out_file)
+  else
+    output_check = string.format('test -f "%s"', out_file)
+  end
+  if dsys.external_command(output_check) ~= 0 then
     dt.print(_("Enfuse failed: output file was not created."))
     dt.print_log("Enfuse failed: output file was not created.")
     return
   end
-  f:close()
+
+  -- Remove temporary files only after a successful merge and output check.
+  for _, p in ipairs(img_paths) do os.remove(p) end
+  if align_prefix then
+    for i = 0, #images - 1 do os.remove(string.format("%s%04d.tif", align_prefix, i)) end
+  end
 
   dt.database.import(out_file)
 end
